@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"cmp"
 	"context"
 	"io"
 	"net"
@@ -36,20 +37,14 @@ func RelayConns(ctx context.Context, clientConn, targetConn net.Conn) error {
 	defer stop()
 
 	var wg sync.WaitGroup
-	var err error
+	var copyErr1, copyErr2 error
 
 	wg.Go(func() {
-		_, copyErr := io.Copy(targetConn, clientConn)
-		if copyErr != nil {
-			err = copyErr
-		}
+		_, copyErr1 = io.Copy(targetConn, clientConn)
 		closeConns()
 	})
 	wg.Go(func() {
-		_, copyErr := io.Copy(clientConn, targetConn)
-		if copyErr != nil {
-			err = copyErr
-		}
+		_, copyErr2 = io.Copy(clientConn, targetConn)
 		closeConns()
 	})
 	wg.Wait()
@@ -58,5 +53,5 @@ func RelayConns(ctx context.Context, clientConn, targetConn net.Conn) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
 	}
-	return err
+	return cmp.Or(copyErr1, copyErr2)
 }
