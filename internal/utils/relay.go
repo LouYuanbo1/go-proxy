@@ -49,9 +49,5 @@ func RelayConns(ctx context.Context, clientConn, targetConn net.Conn) error {
 	})
 	wg.Wait()
 
-	// 如果ctx被取消，优先返回ctx.Err()，否则返回copy错误
-	if ctxErr := ctx.Err(); ctxErr != nil {
-		return ctxErr
-	}
-	return cmp.Or(copyErr1, copyErr2)
+	return cmp.Or(ctx.Err(), copyErr1, copyErr2)
 }
